@@ -25,6 +25,10 @@ bin/
 # Ignore all `library.jar` in `bin` dir
 */bin/library.jar
 
+# Ignore gdb files:
+peda-*.txt
+*.gdb_history
+
 # Ignore a file with extension
 relative/path/to/dir/filename.extension
 
