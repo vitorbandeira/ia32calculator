@@ -43,6 +43,7 @@ section .data
 
 section .bss
 	user_name	resb	16	; nome do usuário da calculadora
+	option	resb	1	; menu option
 	arg1	resb	11	; operandos com até 32 bits (11 algarismos)
 	arg2	resb	11	; operandos com até 32 bits (11 algarismos)
 
@@ -78,6 +79,7 @@ _start:
 	push new_line
 	call put_string
 
+menu:
 	push new_line_size
 	push new_line
 	call put_string
@@ -86,22 +88,27 @@ _start:
 	push choose_msg
 	call put_string
 
+; add operation
 	push sum_msg_size
 	push sum_msg
 	call put_string
 
+; sub operation
 	push sub_msg_size
 	push sub_msg
 	call put_string
 
+; mul operation
 	push mul_msg_size
 	push mul_msg
 	call put_string
 
+; div operation
 	push div_msg_size
 	push div_msg
 	call put_string
 
+; mod operation:
 	push mod_msg_size
 	push mod_msg
 	call put_string
@@ -109,6 +116,14 @@ _start:
 	push quit_msg_size
 	push quit_msg
 	call put_string
+
+; get operation:
+	push 1
+	push option
+	call get_string
+
+	cmp byte [option], 36h	; 6d = 26h
+	jne menu
 
 return:
 	mov eax, 1			; sys_exit
@@ -155,7 +170,7 @@ get_string:
 	mov eax, 3	; sys_write
 	mov ebx, 0	; std_out
 	mov ecx, [esp + 4]	; string pointer
-	mov edx, [esp + 8] ; string length
+	mov edx, [esp + 6] ; string length
 	int 80h
 	ret 4
 
