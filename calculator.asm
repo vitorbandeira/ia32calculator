@@ -122,13 +122,36 @@ menu:
 	push option
 	call get_string
 
-	cmp byte [option], 36h	; 6d = 26h
+	cmp byte [option], 31h	; 1d = 31h
+	je	add_operation
+	cmp byte [option], 36h	; 6d = 36h
 	jne menu
 
 return:
 	mov eax, 1			; sys_exit
 	mov ebx, 0
 	int 80h
+
+add_operation:
+	push op1_msg_size
+	push op1_msg
+	call put_string
+
+	push ax	; save space for return firts operand
+	push bx ; save space for return second operand
+	push 11
+	push arg1
+	call get_signed_int
+
+	;push op2_msg_size
+	;push op2_msg
+	;call put_string
+;
+	;push 11
+	;push arg2
+	;call get_signed_int
+
+	jmp return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PROCEDURE
@@ -173,5 +196,23 @@ get_string:
 	mov edx, [esp + 6] ; string length
 	int 80h
 	ret 4
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; PROCEDURE
+;	stack ->	ax (esp+10)
+;						bx (esp+8)
+;						arg_size (esp+6)
+;						arg (esp+4)
+;						return Addrs (esp)
+get_signed_int:
+	mov eax, 3	; sys_write
+	mov ebx, 0	; std_out
+	mov ecx, [esp + 4]	; string pointer
+	mov edx, [esp + 6] ; string length
+	int 80h
+	ret 4
+
+
+	
 
 
