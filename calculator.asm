@@ -74,16 +74,18 @@ _start:
 	push hello_cont_size
 	push hello_cont
 	call put_string
-
+	; Imprime uma new line no terminal
 	push new_line_size
 	push new_line
 	call put_string
 
 menu:
+	;Imprime uma new line no terminal
 	push new_line_size
 	push new_line
 	call put_string
 
+	; Escolha uma opcao:
 	push choose_msg_size
 	push choose_msg
 	call put_string
@@ -122,6 +124,8 @@ menu:
 	push option
 	call get_string
 
+	; Faz a logica do menu e a opcao selecionada
+
 	cmp byte [option], 31h	; 1d = 31h
 	je	add_operation
 	cmp byte [option], 36h	; 6d = 36h
@@ -133,15 +137,16 @@ return:
 	int 80h
 
 add_operation:
+	; mensagem para Digitar o primeiro arg
 	push op1_msg_size
 	push op1_msg
 	call put_string
-
+	; Funcao para pegar a string e retornar inteiro
 	push ax	; save space for return firts operand
-	push bx ; save space for return second operand
-	push 11
 	push arg1
 	call get_signed_int
+	push bx
+	call int_to_string
 
 	;push op2_msg_size
 	;push op2_msg
@@ -160,7 +165,7 @@ put_name:
 	sub edx, edx
 	mov ecx, [esp + 4]	; string pointer
 name:
-	cmp byte [ecx], 0	; null character
+	cmp byte [ecx], 0ah	; line feed character
 	je	final_name
 	cmp byte [ecx], 13	; enter character
 	je	final_name
@@ -190,7 +195,7 @@ put_string:
 ; PROCEDURE
 ;
 get_string:
-	mov eax, 3	; sys_write
+	mov eax, 3	; sys_read
 	mov ebx, 0	; std_out
 	mov ecx, [esp + 4]	; string pointer
 	mov edx, [esp + 6] ; string length
@@ -205,13 +210,38 @@ get_string:
 ;						arg (esp+4)
 ;						return Addrs (esp)
 get_signed_int:
-	mov eax, 3	; sys_write
-	mov ebx, 0	; std_out
+	;Pega a string e coloca no vetor do argumento
+	mov eax, 3	; sys_read
+	mov ebx, 0	; std_out (teclado)
 	mov ecx, [esp + 4]	; string pointer
-	mov edx, [esp + 6] ; string length
+	mov edx, 11 ; string length o maximo é 11 algarismos
 	int 80h
+	;Zera o registrador EBX - resultado 
+	sub ebx,ebx
+	sub eax,eax
+comeco: 
+	movzx eax,byte [ecx] ; coloca o digito do numero no eax
+	inc ecx		; vai para o proximo digito
+	cmp eax, 48 ; Compara o  digito com 0 - 48d
+	jb	fim
+	cmp eax , 57 ; Compara o  digito com 9 - 57d
+	ja 	fim
+	sub al,30h ; transforma o digito em decimal
+	
+	imul ebx,10 ; Pega o resultado parcial e multiplica por 10
+	add ebx,eax	; O valor final fica em ebx
+	jmp comeco	
+fim:
 	ret 4
 
+int_to_string:
+	push ebx
+	push edx
+	movzx ebx,word[esp+4] ; O valor de ebx
+	sub edx,edx
+	div word 10
+	test eax,eax ; testa se o quociente é 0
+	je fim
 
 	
 
