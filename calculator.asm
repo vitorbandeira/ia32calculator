@@ -40,12 +40,16 @@ section .data
 
 	new_line	db	0Dh, 0Ah
 	new_line_size	EQU	$-new_line
+	numero dw 1000
 
 section .bss
 	user_name	resb	16	; nome do usuário da calculadora
 	option	resb	1	; menu option
-	arg1	resb	11	; operandos com até 32 bits (11 algarismos)
-	arg2	resb	11	; operandos com até 32 bits (11 algarismos)
+	arg1	resb	11	; operandos com até 32 bits (10 algarismos)
+	arg2	resb	11	; operandos com até 32 bits (10 algarismos)
+	resposta resb   11  ; Resultado da operacao
+	arg1Int resw	1	; Inteiro do argumento 1
+	arg2Int	resw	1	; Inteiro do argumento 2
 
 section .text
 global _start
@@ -142,20 +146,27 @@ add_operation:
 	push op1_msg
 	call put_string
 	; Funcao para pegar a string e retornar inteiro
-	push ax	; save space for return firts operand
-	push arg1
-	call get_signed_int
-	push bx
+	; Recebe como argumento o lugar para guardar o inteiro
+	;push arg1Int
+	;push arg1
+	;call get_signed_int
+	;pop eax
+	mov eax,[numero]
+	mov  	ecx,4
+	push eax ; lugar que o numero inteiro ta guardado
+	push ecx ; Tamanho do numero inteiro
 	call int_to_string
 
-	;push op2_msg_size
-	;push op2_msg
-	;call put_string
-;
-	;push 11
-	;push arg2
-	;call get_signed_int
-
+	
+	push 	ecx		; Tamanho do numero
+	push word	[arg1Int]	; Numero inteiro
+	call int_to_string
+	
+	;; Funcao para pegar o inteiro e transoformar em uma string
+	;; Parametros - Tamanho e lugar
+	;push 
+	
+	
 	jmp return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -202,46 +213,96 @@ get_string:
 	int 80h
 	ret 4
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PROCEDURE
-;	stack ->	ax (esp+10)
-;						bx (esp+8)
-;						arg_size (esp+6)
-;						arg (esp+4)
-;						return Addrs (esp)
+;
+	;push arg1Int
+	;push arg1
+	;call get_signed_int
+
 get_signed_int:
 	;Pega a string e coloca no vetor do argumento
 	mov eax, 3	; sys_read
 	mov ebx, 0	; std_out (teclado)
 	mov ecx, [esp + 4]	; string pointer
-	mov edx, 11 ; string length o maximo é 11 algarismos
+	mov edx, 11 ; string length o maximo é 10 algarismos + o sinal = 11
 	int 80h
-	;Zera o registrador EBX - resultado 
+	;Zera os registradores EBX - resultado 
+	sub esi,esi
 	sub ebx,ebx
 	sub eax,eax
-comeco: 
-	movzx eax,byte [ecx] ; coloca o digito do numero no eax
-	inc ecx		; vai para o proximo digito
-	cmp eax, 48 ; Compara o  digito com 0 - 48d
-	jb	fim
-	cmp eax , 57 ; Compara o  digito com 9 - 57d
-	ja 	fim
-	sub al,30h ; transforma o digito em decimal
+	mov edi,10
+	mov ecx, [esp + 4] ; LUgar do numero digitado
+comecoStringToInt: 
+	movzx ebx,byte [ecx + esi] ; coloca o digito do numero no ebx
+	cmp bl , 45 ; ASCII do '-'
+	je	incrementaStringToInt
+	cmp bl, 48 ; Compara o  digito com 0 - 48d
+	jb	fimStringToInt
+	cmp bl , 57 ; Compara o  digito com 9 - 57d
+	ja 	fimStringToInt
+	sub bl,30h ; transforma o digito em decimal
 	
-	imul ebx,10 ; Pega o resultado parcial e multiplica por 10
-	add ebx,eax	; O valor final fica em ebx
-	jmp comeco	
-fim:
+	mul edi ; Pega o resultado parcial(eax) e multiplica por 10
+	add eax,ebx	; O valor final fica em eax
+incrementaStringToInt:	inc esi
+	jmp comecoStringToInt
+fimStringToInt:
+	cmp byte [ecx],45 ; Compara e verifica se o numero é negativo
+	jne finalStringToInt
+	sub ebx,ebx
+	sub ebx,eax	; Torna o numero negativo
+	mov eax,ebx	; Coloca ele de novo em EAX
+finalStringToInt:	
+	mov [esp+8],eax	; Numero inteiro
+	mov ecx,esi		; Tamanho do numero
 	ret 4
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; PROCEDURE
+;
 
+	;push eax ; lugar que o numero inteiro ta guardado
+	;push ecx ; Tamanho do numero inteiro
+	;call int_to_string
 int_to_string:
-	push ebx
-	push edx
-	movzx ebx,word[esp+4] ; O valor de ebx
-	sub edx,edx
-	div word 10
-	test eax,eax ; testa se o quociente é 0
-	je fim
+	mov eax,[esp+8]		;; EAX - Valor a ser impresso na tela
+	mov eax,[eax]
+	mov	ebx,resposta+10	; EBX - Digito menos significativo do numero
+	cmp eax,2147483647	; Se for maior que esse valor significa que o numero é negativo
+	ja negativo
+continuacao:
+	mov	ecx,[esp+4]	; ECX - O tanto de algarismos que o numero contem
+	mov	edi,10
+				;-2147483648	 Maior numero negativo
+	
+TransformaEmString:
+	mov	edx,0
+	div	edi
+	add	edx,48
+	mov	[ebx],dl
+	dec	ebx
+	dec ecx
+	jnz TransformaEmString
+fim:
+	mov	eax,4			
+	mov	ebx,1			
+	mov	ecx,resposta
+	mov	edx,11
+	int	80h
+	ret 
+
+negativo:
+	mov byte [resposta],45
+	mov edx,4294967295		; Transforma o numero em negativo
+	sub edx,eax		
+	mov eax,edx				; Recoloca no registrador EAX
+	inc eax					;
+	jmp continuacao			; VOlta ao procedimento normal
+
+
+
 
 	
 
