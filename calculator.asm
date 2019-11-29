@@ -38,6 +38,9 @@ section .data
 	result_msg db	'O resultado é: ',0
 	result_msg_size	EQU	$-result_msg
 
+	exit_msg db	'Saindo da calculadora... ',0dh, 0ah
+	exit_msg_size	EQU	$-exit_msg
+
 	new_line	db	0Dh, 0Ah
 	new_line_size	EQU	$-new_line
 
@@ -153,18 +156,19 @@ menu:
 	
 	;cmp byte [option], 36h	; 6d = 36h
 	;jne menu
+	push exit_msg_size
+	push exit_msg
+	call put_string
 
+; saída do programa
 return:
-	mov eax, 1			; sys_exit
+	mov eax, 1	; sys_exit
 	mov ebx, 0
 	int 80h
 
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE
+; PROCEDIMENTO
+;	Aguarda usuário pressionar ENTER para voltar a exibir o menu	
 ;
 espera:
 	push new_line_size
@@ -178,24 +182,25 @@ espera:
 	cmp byte [option], 0ah
 	jne espera
 	jmp menu
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE - ADICAO
+; SUBROTINA - ADIÇÃO
 ;
 add_operation:
-	; mensagem para Digitar o primeiro arg
+	; Chama procedimento put_string para solicitar ao usuário o primeiro argumento da operação
 	push op1_msg_size
 	push op1_msg
 	call put_string
-	; Funcao para pegar a string e retornar inteiro
+
+	; Procedimento para pegar a string do usuário e retornar como inteiro 32 bits
 	; Recebe como argumento o lugar para guardar o inteiro e o lugar da string
-	
 	push arg1Int	; Lugar para guardar o inteiro 	
 	push arg1		; Lugar para armazenar a string do inteiro
 	call get_signed_int
 
 	mov eax,[arg1Int] ;Coloca o numero inteiro no EAX
 
-; Pegar o 2 numero
+; Chama procedimento put_string para solicitar ao usuário o segundo argumento da operação
 	push op2_msg_size
 	push op2_msg
 	call put_string
@@ -204,42 +209,44 @@ add_operation:
 	push arg2		; Lugar para armazenar a string do inteiro
 	call get_signed_int
 	
-	
-	;O resultado é 
+	; Exibe a mensagem: "O resultado é: "
 	push result_msg_size
 	push result_msg
 	call put_string
 	
-	; é feito a soma dois dois
+	; É feita a soma dois argumentos inteiros
 	mov eax,[arg1Int]
 	mov	ebx,[arg2Int]
-	add eax,ebx
-	mov ecx , 10
+	add eax,ebx	; arg1Int + arg2Int
+	mov ecx, 10
 
-	push eax ; Numero que se deseja escrever na tela
+	push eax ; Número inteiro que se deseja escrever na tela
 	push ecx ; Tamanho do numero inteiro
 
+	; Chamada o procedimento int_to_string para converter o inteito em string para ser mostrado na tela
 	call int_to_string
 		
+	; Aguarda ação do usuário
 	jmp espera
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE - SUBTRACAO
+; SUBROTINA - SUBTRAÇÃO
 ;
 sub_operation:
-; mensagem para Digitar o primeiro arg
+	; Chama procedimento put_string para solicitar ao usuário o primeiro argumento da operação
 	push op1_msg_size
 	push op1_msg
 	call put_string
-	; Funcao para pegar a string e retornar inteiro
+
+	; Procedimento para pegar a string do usuário e retornar como inteiro 32 bits
 	; Recebe como argumento o lugar para guardar o inteiro e o lugar da string
-	
 	push arg1Int	; Lugar para guardar o inteiro 	
 	push arg1		; Lugar para armazenar a string do inteiro
 	call get_signed_int
 
 	mov eax,[arg1Int] ;Coloca o numero inteiro no EAX
 
-; Pegar o 2 numero
+	; Chama procedimento put_string para solicitar ao usuário o segundo argumento da operação
 	push op2_msg_size
 	push op2_msg
 	call put_string
@@ -249,45 +256,44 @@ sub_operation:
 	call get_signed_int
 	
 	
-	;O resultado é 
+	;Exibe a mensagem: "O resultado é: " 
 	push result_msg_size
 	push result_msg
 	call put_string
-	
-	; é feito a subtracao dos dois
+
+	; É feita a subtração dos dois argumentos inteiros
 	mov eax,[arg1Int]
 	mov	ebx,[arg2Int]
-	sub eax,ebx
+	sub eax,ebx ; arg1Int - arg2Int
 	mov ecx , 10
 
-	push eax ; Numero que se deseja escrever na tela
+	push eax ; Número inteiro que se deseja escrever na tela
 	push ecx ; Tamanho do numero inteiro
 
+	; Chamada o procedimento int_to_string para converter o inteito em string para ser mostrado na tela
 	call int_to_string
 		
+	; Aguarda ação do usuário
 	jmp espera
 
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE - MULTIPLICACAO
+; SUBROTINA - MULTIPLICACAO
 ;
-; mensagem para Digitar o primeiro arg
 mul_operation:
+; Chama procedimento put_string para solicitar ao usuário o primeiro argumento da operação
 	push op1_msg_size
 	push op1_msg
 	call put_string
-	; Funcao para pegar a string e retornar inteiro
+
+	; Procedimento para pegar a string do usuário e retornar como inteiro 32 bits
 	; Recebe como argumento o lugar para guardar o inteiro e o lugar da string
-	
 	push arg1Int	; Lugar para guardar o inteiro 	
 	push arg1		; Lugar para armazenar a string do inteiro
 	call get_signed_int
 
 	mov eax,[arg1Int] ;Coloca o numero inteiro no EAX
 
-; Pegar o 2 numero
+; Chama procedimento put_string para solicitar ao usuário o segundo argumento da operação
 	push op2_msg_size
 	push op2_msg
 	call put_string
@@ -297,12 +303,12 @@ mul_operation:
 	call get_signed_int
 	
 	
-	;O resultado é 
+	; Exibe a mensagem: "O resultado é: " 
 	push result_msg_size
 	push result_msg
 	call put_string
 	
-	; é feito a multiplicacao dos dois numeros
+	; É feita a multiplicação dos dois argumentos inteiros
 	mov eax,[arg1Int]
 	mov	ebx,[arg2Int]
 	imul ebx
@@ -311,12 +317,15 @@ mul_operation:
 	jnz multiplicacao64bits
 	
 
-	push eax ; Numero que se deseja escrever na tela
+	push eax ; Numero inteiro que se deseja escrever na tela
 	push ecx ; Tamanho do numero inteiro
 
+	; Chamada o procedimento int_to_string para converter o inteito em string para ser mostrado na tela
 	call int_to_string
 		
+	; Aguarda ação do usuário
 	jmp espera
+
 multiplicacao64bits:
 	push edx ; Numero que se deseja escrever na tela
 	push ecx ; Tamanho do numero inteiro
@@ -330,26 +339,24 @@ multiplicacao64bits:
 		
 	jmp espera
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE - MOD
+; SUBROTINA - MOD
 ;
 mod_operation:
-; mensagem para Digitar o primeiro arg
+	; Chama procedimento put_string para solicitar ao usuário o primeiro argumento da operação
 	push op1_msg_size
 	push op1_msg
 	call put_string
-	; Funcao para pegar a string e retornar inteiro
+
+	; Procedimento para pegar a string do usuário e retornar como inteiro 32 bits
 	; Recebe como argumento o lugar para guardar o inteiro e o lugar da string
-	
 	push arg1Int	; Lugar para guardar o inteiro 	
 	push arg1		; Lugar para armazenar a string do inteiro
 	call get_signed_int
 
 	mov eax,[arg1Int] ;Coloca o numero inteiro no EAX
 
-; Pegar o 2 numero
+; Chama procedimento put_string para solicitar ao usuário o segundo argumento da operação
 	push op2_msg_size
 	push op2_msg
 	call put_string
@@ -359,12 +366,12 @@ mod_operation:
 	call get_signed_int
 	
 	
-	;O resultado é 
+	; Exibe a mensagem: "O resultado é: " 
 	push result_msg_size
 	push result_msg
 	call put_string
 	
-	; é feito a divisao dos dois
+	; É feita a divisao dos dois argumentos inteiros
 teste:
 	mov eax,[arg1Int]
 	mov	ebx,[arg2Int]
@@ -380,33 +387,34 @@ continua_mod:
 	push edx ; Numero que se deseja escrever na tela
 	push ecx ; Tamanho do numero inteiro
 
+	; Chamada o procedimento int_to_string para converter o inteito em string para ser mostrado na tela	
 	call int_to_string
-		
+
+	; Aguarda ação do usuário
 	jmp espera
+
 extende_sinalmod:
 	mov edx,4294967295
 	jmp continua_mod
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE - Divisao
+; SUBROTINA - DIVISÃO
 ;
-
 div_operation:
-; mensagem para Digitar o primeiro arg
+	; Chama procedimento put_string para solicitar ao usuário o primeiro argumento da operação
 	push op1_msg_size
 	push op1_msg
 	call put_string
-	; Funcao para pegar a string e retornar inteiro
+
+	; Procedimento para pegar a string do usuário e retornar como inteiro 32 bits
 	; Recebe como argumento o lugar para guardar o inteiro e o lugar da string
-	
 	push arg1Int	; Lugar para guardar o inteiro 	
 	push arg1		; Lugar para armazenar a string do inteiro
 	call get_signed_int
 
 	mov eax,[arg1Int] ;Coloca o numero inteiro no EAX
 
-; Pegar o 2 numero
+; Chama procedimento put_string para solicitar ao usuário o segundo argumento da operação
 	push op2_msg_size
 	push op2_msg
 	call put_string
@@ -415,13 +423,12 @@ div_operation:
 	push arg2		; Lugar para armazenar a string do inteiro
 	call get_signed_int
 	
-	
-	;O resultado é 
+	;Exibe a mensagem: "O resultado é: " 
 	push result_msg_size
 	push result_msg
 	call put_string
 	
-	; é feito a divisao dos dois
+	; É feita a divisao dos dois argumentos inteiros
 	mov eax,[arg1Int]
 	mov	ebx,[arg2Int]
 	sub edx,edx
@@ -436,76 +443,83 @@ continua_div:
 	push eax ; Numero que se deseja escrever na tela
 	push ecx ; Tamanho do numero inteiro
 
+	; Chamada o procedimento int_to_string para converter o inteito em string para ser mostrado na tela
 	call int_to_string
 		
+	; Aguarda ação do usuário
 	jmp espera
+
 extende_sinaldiv:
 	mov edx,4294967295
 	jmp continua_div
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE
+; PROCEDIMENTO - put_name
+; Usado para printar o nome do usuário na tela,
+; visto que a string obtida não necessariamente
+; tem o tamanho total de bytes reservados.
 ;
 put_name:
 	sub edx, edx
-	mov ecx, [esp + 4]	; string pointer
+	mov ecx, [esp + 4]	; desempilha o ponteiro da string
 name:
-	cmp byte [ecx], 0ah	; line feed character
+	cmp byte [ecx], 0ah	; compara com o line feed character
 	je	final_name
-	cmp byte [ecx], 13	; enter character
+	cmp byte [ecx], 13	; compara com o enter character
 	je	final_name
-	inc edx	; size name counter
-	inc ecx	; get next character
+	inc edx	; contador para o tamanho da string
+	inc ecx	; desloca o ponteiro da string para o próximo caracter
 	jmp name
 
 final_name:
-	mov ecx, [esp + 4]	; restart pointer to initial string character
+	mov ecx, [esp + 4]	; retornar o ponteiro da string para a posição original
 	mov eax, 4	; sys_write
 	mov ebx, 1	; std_out
 	int 80h
 	ret 2
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE
+; PROCEDIMENTO - put_string
+; Usado para printar strings na tela
 ;
 put_string:
 	mov eax, 4	; sys_write
 	mov ebx, 1	; std_out
-	mov ecx, [esp + 4]	; string pointer
-	mov edx, [esp + 8] ; string length
+	mov ecx, [esp + 4]	; ponteiro da string
+	mov edx, [esp + 8] ; tamanho da string
 	int 80h
 	ret 4
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE
+; PROCEDIMENTO - get_string
+; Usado para ler strings fornecidas pelo usuário
 ;
 get_string:
 	mov eax, 3	; sys_read
 	mov ebx, 0	; std_out
-	mov ecx, [esp + 4]	; string pointer
-	mov edx, [esp + 6] ; string length
+	mov ecx, [esp + 4]	; ponteiro da string
+	mov edx, [esp + 6] ; tamanho da string
 	int 80h
 	ret 4
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE - pegar numero do teclado e transformar em inteiro
+; PROCEDIMENTO - get_signed_int
+; pegar número do teclado e transformar em inteiro
 ;
 get_signed_int:
 	;Pega a string e coloca no vetor do argumento
 	mov eax, 3	; sys_read
 	mov ebx, 0	; (teclado)
 	mov ecx, [esp + 4]	; Coloca a string do numero digitado nessa posicao
-	mov edx, 11 ; string length o maximo é 10 algarismos + o sinal = 11
+	mov edx, 11 ; tamanho da string: o maximo é 10 algarismos + o sinal = 11
 	int 80h
+
 	;Zera os registradores EBX - resultado 
-	sub esi,esi
-	sub ebx,ebx
-	sub eax,eax
-	mov edi,10
-	mov ecx, [esp + 4] ; LUgar do numero digitado
+	sub esi, esi
+	sub ebx, ebx
+	sub eax, eax
+	mov edi, 10
+	mov ecx, [esp + 4] ; Lugar do numero digitado
 comecoStringToInt: 
 	movzx ebx,byte [ecx + esi] ; coloca o digito do numero no ebx
 	cmp bl , 45 ; ASCII do '-'
@@ -535,7 +549,9 @@ finalStringToInt:
 	ret 8
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; PROCEDURE
+; PROCEDIMENTO - int_to_string
+; Realiza a conversão de inteiro para string para 
+; mostrar o resultado na tela
 ;
 int_to_string:
 	mov eax,[esp+8]		; EAX - Valor a ser impresso na tela
@@ -546,7 +562,7 @@ int_to_string:
 continuacao:
 	mov	ecx,[esp+4]	; ECX - O tanto de algarismos que o numero contem
 	mov	edi,10
-					;-2147483648	 Maior numero negativo
+	;-2147483648	 Maior numero negativo
 	
 TransformaEmString:
 	mov	edx,0
@@ -572,10 +588,4 @@ negativo:
 	mov eax,edx				; Recoloca no registrador EAX
 	inc eax					;
 	jmp continuacao			; VOlta ao procedimento normal
-
-
-
-
-	
-
 
