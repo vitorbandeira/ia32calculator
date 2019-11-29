@@ -2,7 +2,7 @@ section .data
 	welcome_msg db	'Qual o seu nome? ',0
 	welcome_msg_size	EQU	$-welcome_msg
 
-	hello_msg db	'Hóla, ',0
+	hello_msg db	'Ola, ',0
 	hello_msg_size	EQU	$-hello_msg
 
 	hello_cont db	', bem-vindo ao programa de CALC IA-32',0
@@ -151,8 +151,8 @@ menu:
 	cmp byte [option], 35h	; 5d = 35h
 	je	mod_operation
 	
-	;cmp byte [option], 36h	; 6d = 36h
-	;jne menu
+	cmp byte [option], 36h	; 6d = 36h
+	jne menu
 
 return:
 	mov eax, 1			; sys_exit
@@ -305,24 +305,12 @@ mul_operation:
 	; é feito a multiplicacao dos dois numeros
 	mov eax,[arg1Int]
 	mov	ebx,[arg2Int]
+teste:
+	;zera edx
+	sub edx,edx
 	imul ebx
 	mov ecx , 10
-	sub edx,0				;Testa se edx = 0
-	jnz multiplicacao64bits
-	
 
-	push eax ; Numero que se deseja escrever na tela
-	push ecx ; Tamanho do numero inteiro
-
-	call int_to_string
-		
-	jmp espera
-multiplicacao64bits:
-	push edx ; Numero que se deseja escrever na tela
-	push ecx ; Tamanho do numero inteiro
-
-	call int_to_string
-	
 	push eax ; Numero que se deseja escrever na tela
 	push ecx ; Tamanho do numero inteiro
 
@@ -365,7 +353,6 @@ mod_operation:
 	call put_string
 	
 	; é feito a divisao dos dois
-teste:
 	mov eax,[arg1Int]
 	mov	ebx,[arg2Int]
 	sub edx,edx
